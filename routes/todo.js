@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
-const getTodo = require("./middleware/todo");
 
 // get all
 router.get("/", async (req, res) => {
@@ -14,8 +13,16 @@ router.get("/", async (req, res) => {
 });
 
 // get one
-router.get("/:todo_id", getTodo, async (req, res) => {
-	res.json(res.todo[0]);
+router.get("/:todo_id", async (req, res) => {
+	try {
+		const { todo_id } = req.params;
+		const todo = await pool.query("SELECT * FROM todo_tbl WHERE todo_id = ?", [
+			todo_id,
+		]);
+		res.status(201).json(todo[0]);
+	} catch (error) {
+		return res.status(500).json({ message: error.message });
+	}
 });
 
 // create
@@ -32,7 +39,7 @@ router.post("/", async (req, res) => {
 });
 
 // update
-router.put("/:todo_id", getTodo, async (req, res) => {
+router.patch("/:todo_id", async (req, res) => {
 	try {
 		const { todo_id } = req.params;
 		const { task } = req.body;
@@ -47,7 +54,7 @@ router.put("/:todo_id", getTodo, async (req, res) => {
 });
 
 // delete
-router.delete("/:todo_id", getTodo, async (req, res) => {
+router.delete("/:todo_id", async (req, res) => {
 	try {
 		const { todo_id } = req.params;
 		const deleteTodo = await pool.query(
